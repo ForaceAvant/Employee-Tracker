@@ -1,8 +1,17 @@
 const inquirer = require("inquirer");
 const db = require("./db");
 require("console.table");
+const mysql = require("mysql");
 
+const connection = mysql.createConnection({
+    host: "localhost",
+    port: 3306,
+    user: "root",
+    password: "root",
+    database: "employees"
+});
 
+start();
 //Start initial inquirer prompts
 function start() {
     inquirer.prompt({
@@ -12,7 +21,7 @@ function start() {
       choices: ["View All Employees", "Add Employees", "View All Roles", "Add Role", "Update Employee Role", "View All Departments", "Add Department"]   
     })
     .then(function(answer){
-        switch (answer) {
+        switch (answer.choice) {
             case "View All Employees":
                 return viewEmployees();
             case "Add Employees":
@@ -50,20 +59,55 @@ function addEmployee() {
 
 //Views departments in database
 function viewDepartments() {
-    
+    connection.query(
+        "SELECT * FROM department",
+        function(err, results) {
+            if (err) throw err;
+
+            console.log("\n");
+            console.table(results);
+
+            start();
+        }
+    );
 };
 
 //Views roles in database
 function viewRoles() {
+    connection.query(
+        "SELECT * FROM role",
+        function(err, results) {
+            if (err) throw err;
 
+            console.log("\n");
+            console.table(results);
+
+            start();
+        }
+    );
 };
 
 //Views Employees in database
 function viewEmployees() {
+    connection.query(
+        "SELECT * FROM employee",
+        function(err, results) {
+            if (err) throw err;
 
+            console.log("\n");
+            console.table(results);
+
+            start();
+        }
+    );
 };
 
 //Updates employee roles
 function updateEmployeeRole(){
 
 };
+
+function quit() {
+    console.log("Have a nice day!");
+    process.exit();
+}
