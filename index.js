@@ -17,7 +17,7 @@ function start() {
         type: "list",
         name: "choice",
         message: "What would you like to do?",
-        choices: ["View All Employees", "Add Employees", "View All Roles", "Add Role", "Update Employee Role", "View All Departments", "Add Department"]
+        choices: ["View All Employees", "Add Employees", "View All Roles", "Add Role", "Update Employee Role", "View All Departments", "Add Department", "Quit"]
     })
         .then(function (answer) {
             switch (answer.choice) {
@@ -58,7 +58,9 @@ function addDepartment() {
                 },
                 function (err) {
                     if (err) throw err;
+                    console.log("\n");
                     console.log(`Added ${answer.departmentName} to the database`);
+                    console.log("\n");
                     start();
                 }
             )
@@ -114,7 +116,9 @@ function addRole() {
                         },
                         function (err) {
                             if (err) throw err;
+                            console.log("\n");
                             console.log(`Added ${answer.title} to the database`);
+                            console.log("\n");
                             start();
                         }
                     )
@@ -143,12 +147,12 @@ function addEmployee() {
                 function (err, results) {
                     if (err) throw err;
                     var managers = [];
-  
+
                     var managerNames = ["None"];
 
                     managers = results;
                     managers.forEach(manager => managerNames.push(manager.first_name + " " + manager.last_name));
-                    
+
 
                     inquirer.prompt([
                         {
@@ -179,12 +183,12 @@ function addEmployee() {
                             var managerId = null;
 
                             var managersName = (answer.manager_id).split(" ");
-                            
+
 
                             for (let i = 0; i < managers.length; i++) {
                                 if (managersName[0] == managers[i].first_name) {
                                     managerId = managers[i].id;
-                                    
+
                                 }
                             }
 
@@ -201,11 +205,13 @@ function addEmployee() {
                                 role_id: roleId,
                                 manager_id: managerId
                             },
-                            function (err) {
-                                if (err) throw err;
-                                console.log(`Added ${answer.firstName} ${answer.lastName} to the database`);
-                                start();
-                            }
+                                function (err) {
+                                    if (err) throw err;
+                                    console.log("\n");
+                                    console.log(`Added ${answer.firstName} ${answer.lastName} to the database`);
+                                    console.log("\n");
+                                    start();
+                                }
 
                             )
                         })
@@ -262,10 +268,101 @@ function viewEmployees() {
 
 //Updates employee roles
 function updateEmployeeRole() {
+    connection.query(
+        "SELECT * FROM role",
+        function (err, results) {
+            if (err) throw err;
 
+            var roles = [];
+            var titles = [];
+
+            roles = results;
+            roles.forEach(role => titles.push(role.title));
+
+            connection.query(
+                "SELECT * FROM employee",
+                function (err, results) {
+                    if (err) throw err;
+                    var managers = [];
+
+                    var managerNames = ["None"];
+
+                    managers = results;
+                    managers.forEach(manager => managerNames.push(manager.first_name + " " + manager.last_name));
+
+
+                    inquirer.prompt([
+                        {
+                            name: "employee_id",
+                            type: "list",
+                            message: "What is the employees first name?",
+                            choices: managerNames
+                        },
+                        {
+                            name: "role_id",
+                            type: "list",
+                            message: "What new role will this employee have?",
+                            choices: titles
+                        },
+                        {
+                            name: "manager_id",
+                            type: "list",
+                            message: "Who is the new manager of this employee?",
+                            choices: managerNames
+                        }
+                    ])
+                        .then(function (answer) {
+                            var roleId;
+                            var managerId = null;
+                            var userId;
+
+                            var managersName = (answer.manager_id).split(" ");
+                            var employeeName = (answer.employee_id).split(" ");
+
+
+                            for (let i = 0; i < managers.length; i++) {
+                                if (managersName[0] == managers[i].first_name && managersName[1] == managers[i].last_name) {
+                                    managerId = managers[i].id;
+                                }
+                                else if (employeeName[0] == managers[i].first_name && employeeName[1] == managers[i].last_name) {
+                                    userId = managers[i].id;
+                                }
+                            }
+
+                            for (let i = 0; i < roles.length; i++) {
+                                if (answer.role_id == roles[i].title) {
+                                    roleId = roles[i].id;
+
+                                }
+                            }
+
+                            connection.query(
+                                "UPDATE employee SET ? WHERE ?", [{
+                                first_name: employeeName[0],
+                                last_name: employeeName[1],
+                                role_id: roleId,
+                                manager_id: managerId
+                            },
+                            {
+                                id: userId
+                            }],
+                            function (err) {
+                                    if (err) throw err;
+                                    console.log("\n");
+                                    console.log(`Updated ${employeeName[0]} ${employeeName[1]} in the database`);
+                                    console.log("\n");
+                                    start();
+                                }
+
+                            )
+                        })
+                }
+            )
+        }
+    )
 };
 
 function quit() {
     console.log("Have a nice day!");
-    process.exit();
+    connection.end();
 }
